@@ -8,4 +8,5 @@ RUN apt update && \
     unzip nopCommerce_4.60.5_NoSource_linux_x64.zip && \
     mkdir /nopcommerce/bin && mkdir /nopcommerce/logs 
 EXPOSE 5000 
-CMD ["dotnet", "Nop.Web.dll","--urls", "http://0.0.0.0:5000"]
+ENV ASPNETCORE_URLS="http://0.0.0.0:5000"
+CMD [ "dotnet", "Nop.Web.dll"]
