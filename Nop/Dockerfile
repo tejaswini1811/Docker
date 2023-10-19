@@ -9,4 +9,3 @@ RUN apt update && \
     mkdir /nopcommerce/bin && mkdir /nopcommerce/logs 
 EXPOSE 5000 
 CMD [ "dotnet", "Nop.Web.dll","--urls", "http://0.0.0.0:5000" ]
-
