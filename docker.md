@@ -1,8 +1,8 @@
 # Docker
 * **Hypervisor:** A hypervisor, also known as a virtual machine monitor or VMM, is software that creates and runs virtual machines (VMs). A hypervisor allows one host computer to support multiple guest VMs by virtually sharing its resources, such as memory and processing.(Which creates VMs and install necessary softwares.)
 *  **Container:** A container is an isolated environment for your code. This means that a container has no knowledge of your operating system, or your files. It runs on the environment provided to you by Docker Desktop. This is why a container usually has everything that your code needs in order to run, down to a base operating system.
-  
-  
+### Difference between containers and virtual machine
+
 | Feature               | Containers                        | Virtual Machines                  |
 |-----------------------|-----------------------------------|-----------------------------------|
 | **Abstraction Level** | Operating System level            | Hardware level                    |
@@ -12,6 +12,7 @@
 | **Portability**       | Highly portable                   | Less portable                     |
 | **Use Cases**         | Microservices, CI/CD, scaling     | Legacy apps, specific OS needs    |
 
+### Difference between monolith and microservices
 
 | Feature                   | Monolithic Architecture          | Microservices Architecture      |
 |---------------------------|----------------------------------|----------------------------------|
@@ -77,7 +78,7 @@
   * **containerd** forks a runc process which creates container. 
   * once the container is created the parent of the container will be **docker shim**
   * Docker shim is a lite weight container which checks on images and report back to the Docker daemon. 
-  ![preview](docker1.webp)
+  ![preview](./images/docker1.webp)
 * ### What happens when we create a container:
 * docker container creation:
 * To create container we need some image in this case lets take `hello-world`.
@@ -156,7 +157,7 @@ docker container run -it -p 30000:8080 amazoncorretto:11 /bin/bash
  ls
  java -jar spring-petclinic-2.4.2.jar
  ```
-![preview](docker2.png) 
+![preview](./images/docker2.png) 
 * We can create an image from running container using `docker container commit <container name> <newimage name:tag>`. This approach creates images but no history of changes are available.
 * remove all the containers and run the myspc image based container.
 * Then run this cmd `docker container run -d -p 30001:8080 --name spc1 myspc:latest java -jar spring-petclinic-2.4.2.jar`.
@@ -168,7 +169,7 @@ Dockerfile
 
 ### Workflow:
 
-![preview](docker3.webp)
+![preview](images/docker3.webp)
 * Dockerfile is a set of text instructions [referhere](https://docs.docker.com/engine/reference/builder/)
 * In Docker we have concept of base image i.e. to run your application using some existing image.
 * We can also  use a base image called as scratch which has nothing in it.
@@ -242,10 +243,10 @@ CMD ["java", "-jar", "/spring-petclinic-2.4.2.jar"]
 ### What do we mean by running container in detached mode?
 * docker container’s STDOUT and STDERR will be attached to your terminal and if we execute ctrl+c the container exits.
 * Running container normally will take us to attached mode.
-![preview](docker4.png)
+![preview](images/docker4.png)
 * In detached mode container executes and gives us back the access to terminal.
 * Once we start the container in detached mode we can still view the STDOUT and STDERR by executing docker container attach <container-name-or-id>.To exit from attach mode Ctrl+PQ
-![preview](docker5.png)
+![preview](images/docker5.png)
 ### Docker container will be in running state as long as command in cmd is running.
 * Docker container will move to exited stated once the command in CMD has finished executing.
   
@@ -255,15 +256,15 @@ Exercise-1:
 * install apache2 and note the ExecStart command for apache2.
     * nano /etc/systemd/system/multi-user.target.wants/apache2.service.
     * ExecStart=/usr/sbin/apachectl start
-  ![preview](docker6.png)
+  ![preview](images/docker6.png)
 * install tomcat9 and note the ExecStart command for tomcat9.
     * nano /etc/systemd/system/multi-user.target.wants/tomcat9.service
     * /bin/sh /usr/libexec/tomcat9/tomcat-start.sh
-  ![preview](docker7.png) 
+  ![preview](images/docker7.png) 
 * stop the services (systemcl stop servicename)
 * become a root user (sudo -i)
 * try executing the ExecStart command directly and see if the application is running.
-  ![preview](docker8.png)
+  ![preview](images/docker8.png)
 
 ### .Net Application(Nop Commerce)
 * Manual steps : [Refer here](https://docs.nopcommerce.com/en/installation-and-upgrading/installing-nopcommerce/installing-on-linux.html)
@@ -280,12 +281,12 @@ mkdir logs
 # run the below command to start the application
 dotnet Nop.Web.dll --urls "http://0.0.0.0:5000" 
 ```
-![preview](docker9.png)
+![preview](images/docker9.png)
 
 **Dockerfile for above application**
 
 * [Refer Here](https://github.com/tejaswini1811/Docker/commit/9f7b716f9984adf39ab4b98eed9be2a8320a20ee) for Dockerfile
-![preview](docker10.png)
+![preview](images/docker10.png)
 * [Refer Here](https://andrewlock.net/5-ways-to-set-the-urls-for-an-aspnetcore-app/) the document to host the .net application on 0.0.0.0
 
 ### Setting Environment Variables in the container
@@ -293,9 +294,9 @@ dotnet Nop.Web.dll --urls "http://0.0.0.0:5000"
 * This instruction adds environmental variable in the container and it also allows us to change environmental variables while creating containers
 * [Refer Here](https://github.com/tejaswini1811/Docker/commit/855f9be41aa9411a89d1fdb4ed1051844454e88d) for the changes done to include environmental varibles
 * docker container exec will allow us to execute commands in the container.
-![preview](docker11.png)
+![preview](images/docker11.png)
 * `docker container exec -it <c-name> <shell>` will allow us to login into container.
-![preview](docker12.png)
+![preview](images/docker12.png)
 * ENV can be changed while creating the Container.
 `docker conatiner run -e <env-name>=<newvalue> -d -P <imagename> `
 
@@ -313,7 +314,7 @@ docker image build --build-arg HOME_DIR=/publish -t nop:1.0.0 .
 
 **USER:** The USER instruction sets the user name (or UID) and optionally the user group (or GID) to use as the default user and group for the remainder of the current stage. The specified user is used for RUN instructions and at runtime, runs the relevant ENTRYPOINT and CMD commands.
 * [Refer Here](https://github.com/tejaswini1811/Docker/commit/50fb43dda46468017a389b388fd60b9ab51d5321) for Dockerfile using user.
-![preview](docker13.png)
+![preview](images/docker13.png)
 * We can create docker image, by giving Dockerfile we can give other name to Dockerfile and create an image by using the command `docker image build -t <imagename> -f <dockerfilename> .`
 ### Image layer
 * Docker images have read only layers when container is created using images then readyand write layer will be added.
