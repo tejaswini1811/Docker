@@ -1,13 +1,47 @@
 # Docker
 * **Hypervisor:** A hypervisor, also known as a virtual machine monitor or VMM, is software that creates and runs virtual machines (VMs). A hypervisor allows one host computer to support multiple guest VMs by virtually sharing its resources, such as memory and processing.(Which creates VMs and install necessary softwares.)
 *  **Container:** A container is an isolated environment for your code. This means that a container has no knowledge of your operating system, or your files. It runs on the environment provided to you by Docker Desktop. This is why a container usually has everything that your code needs in order to run, down to a base operating system.
+  
+  
+| Feature               | Containers                        | Virtual Machines                  |
+|-----------------------|-----------------------------------|-----------------------------------|
+| **Abstraction Level** | Operating System level            | Hardware level                    |
+| **Resource Overhead** | Lower                             | Higher                            |
+| **Isolation**         | Process-level                     | Stronger, with separate OS        |
+| **Performance**       | Lower overhead, faster startup    | Higher overhead, slower startup   |
+| **Portability**       | Highly portable                   | Less portable                     |
+| **Use Cases**         | Microservices, CI/CD, scaling     | Legacy apps, specific OS needs    |
 
+
+| Feature                   | Monolithic Architecture          | Microservices Architecture      |
+|---------------------------|----------------------------------|----------------------------------|
+| **Structure**             | Single, tightly-coupled application | Decentralized, modular services   |
+| **Development**           | Unified codebase                 | Distributed, independent services|
+| **Scaling**               | Horizontal scaling of the entire app | Vertical or horizontal scaling of specific services |
+| **Isolation**             | Limited, changes affect the entire app | High, changes impact specific services |
+| **Technology Stack**      | Single, uniform technology stack | Diverse technology stacks for each service |
+| **Deployment**            | Entire application is deployed at once | Services can be deployed independently |
+| **Flexibility**           | Limited, all components must use the same technology | High, flexibility in choosing technologies for each service |
+| **Fault Tolerance**       | A failure can affect the entire application | Failures are isolated to specific services, enhancing overall system resilience |
+| **Communication**         | Direct method calls within the application | Inter-service communication often via APIs (HTTP/Message queues) |
+| **Scalability**           | Limited scalability options for individual components | Flexible scalability for specific services based on demand |
+| **Development Teams**     | Single development team           | Multiple, smaller teams can work on different services simultaneously |
+| **Example Technologies**  | Java EE, .NET monolithic frameworks | Spring Boot, Node.js, Docker, Kubernetes for microservices |
+
+### How Isolations are created or How Containers Work
+* Each container is getting a
+  * new process tree 
+  * disk mounts
+  * network (nic)
+  * cpu/memory
+  * users
 ### What is docker?
 * Docker (dock worker) is used to create containers which is standard way of packaging any application
 * Application can be any of the below but have a standard way of packaging i.e docker image.
    * developed in any technology
    * developed on any server
 * Packaging in docker image format helps us to run our application.
+* Docker Image contains all the neccessary files to run an application we want inside a container.
   
 ### Expectations from you in terms of Docker
 * Containerize any application run by your organization.
@@ -88,6 +122,17 @@ docker image ls (for listof images)
    5. Delete
 * Command `docker container inspect <container name>` will give you information about the container.
 * Command `docker image inspect <image name>` will give info about image.
+* When the container is created, each container gets its own
+  * network ip address
+  * RAM
+  * filesystem
+  * CPU share
+* Execute `docker stats` to know the cpu/RAM utilization
+### Exploring container 
+* On the docker host(linux) execute the folowing commands
+   * list all the process `ps` or `ps aux`
+   * get the ip address `ip addr` or `ifconfig` (10.2.0.4)
+   * Explore storage `df -h` & `lsblk`
 
 Accessing Application inside Docker containers:
 -------------------------------------------
@@ -112,7 +157,7 @@ docker container run -it -p 30000:8080 amazoncorretto:11 /bin/bash
  java -jar spring-petclinic-2.4.2.jar
  ```
 ![preview](docker2.png) 
-* We can create an image from running container using `docker container commit <container name> <newimage name:tag>`
+* We can create an image from running container using `docker container commit <container name> <newimage name:tag>`. This approach creates images but no history of changes are available.
 * remove all the containers and run the myspc image based container.
 * Then run this cmd `docker container run -d -p 30001:8080 --name spc1 myspc:latest java -jar spring-petclinic-2.4.2.jar`.
 * This is not a useful approach as we are creating images manually.
@@ -239,9 +284,40 @@ dotnet Nop.Web.dll --urls "http://0.0.0.0:5000"
 
 **Dockerfile for above application**
 
-* [ReferHere](https://github.com/tejaswini1811/Docker/blob/main/Nop/Dockerfile) for Dockerfile
+* [Refer Here](https://github.com/tejaswini1811/Docker/commit/9f7b716f9984adf39ab4b98eed9be2a8320a20ee) for Dockerfile
 ![preview](docker10.png)
+* [Refer Here](https://andrewlock.net/5-ways-to-set-the-urls-for-an-aspnetcore-app/) the document to host the .net application on 0.0.0.0
 
+### Setting Environment Variables in the container
+**ENV:** this will set the environmental variable in container. We can also change the env while creating the container.
+* This instruction adds environmental variable in the container and it also allows us to change environmental variables while creating containers
+* [Refer Here](https://github.com/tejaswini1811/Docker/commit/855f9be41aa9411a89d1fdb4ed1051844454e88d) for the changes done to include environmental varibles
+* docker container exec will allow us to execute commands in the container.
+![preview](docker11.png)
+* `docker container exec -it <c-name> <shell>` will allow us to login into container.
+![preview](docker12.png)
+* ENV can be changed while creating the Container.
+`docker conatiner run -e <env-name>=<newvalue> -d -P <imagename> `
+
+**ARG:** ARG instruction allows us to set the values while building the image.
+* Build args can be set while creating images. BUILD ARG can be used by using `${ARG_NAME}`.
+* [Refer Here](https://github.com/tejaswini1811/Docker/commit/f78e169213c1d8756ef0cd574f7f2cf1d972a5c5) for Dockerfile adding ARG.
+* We have build two images by changing the HOME_DIR and DOWNLOAD_URL Build args
+```
+docker image build --build-arg DOWNLOAD_URL=nopCommerce_4.60.2_NoSource_linux_x64.zip -t nop:1.0.2 .
+docker image build --build-arg HOME_DIR=/publish -t nop:1.0.0 . 
+```
+* It is not a good idea to run the container as root user(for security issues) so we have to create a user and switch to that user.
+  
+**ENTRYPOINT:** Entrypoint and CMD does the same but command passed in CMD can be changed while creating the container but entrypoint can't be changed.
+
+**USER:** The USER instruction sets the user name (or UID) and optionally the user group (or GID) to use as the default user and group for the remainder of the current stage. The specified user is used for RUN instructions and at runtime, runs the relevant ENTRYPOINT and CMD commands.
+* [Refer Here](https://github.com/tejaswini1811/Docker/commit/50fb43dda46468017a389b388fd60b9ab51d5321) for Dockerfile using user.
+![preview](docker13.png)
+* We can create docker image, by giving Dockerfile we can give other name to Dockerfile and create an image by using the command `docker image build -t <imagename> -f <dockerfilename> .`
+### Image layer
+* Docker images have read only layers when container is created using images then readyand write layer will be added.
+* 
 
 
 

@@ -56,6 +56,5 @@ RUN git clone https://github.com/rbenv/rbenv-vars.git $RBENV_ROOT/plugins/rbenv-
 
 # Expose port 3000
 EXPOSE 3000
-ENTRYPOINT [  ]
 CMD ["bin/rails", "s", "-b", "0.0.0.0"]
 
