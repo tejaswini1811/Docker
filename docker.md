@@ -1,7 +1,9 @@
 # Docker
 * **Hypervisor:** A hypervisor, also known as a virtual machine monitor or VMM, is software that creates and runs virtual machines (VMs). A hypervisor allows one host computer to support multiple guest VMs by virtually sharing its resources, such as memory and processing.(Which creates VMs and install necessary softwares.)
 *  **Container:** A container is an isolated environment for your code. This means that a container has no knowledge of your operating system, or your files. It runs on the environment provided to you by Docker Desktop. This is why a container usually has everything that your code needs in order to run, down to a base operating system.
-### Difference between containers and virtual machine
+  
+Difference between containers and virtual machine
+-------------------------------------------------
 
 | Feature               | Containers                        | Virtual Machines                  |
 |-----------------------|-----------------------------------|-----------------------------------|
@@ -12,7 +14,8 @@
 | **Portability**       | Highly portable                   | Less portable                     |
 | **Use Cases**         | Microservices, CI/CD, scaling     | Legacy apps, specific OS needs    |
 
-### Difference between monolith and microservices
+Difference between monolith and microservices
+---------------------------------------------
 
 | Feature                   | Monolithic Architecture          | Microservices Architecture      |
 |---------------------------|----------------------------------|----------------------------------|
@@ -29,14 +32,17 @@
 | **Development Teams**     | Single development team           | Multiple, smaller teams can work on different services simultaneously |
 | **Example Technologies**  | Java EE, .NET monolithic frameworks | Spring Boot, Node.js, Docker, Kubernetes for microservices |
 
-### How Isolations are created or How Containers Work
+How Isolations are created or How Containers Work
+-------------------------------------------------
 * Each container is getting a
   * new process tree 
   * disk mounts
   * network (nic)
   * cpu/memory
   * users
-### What is docker?
+  
+What is docker?
+---------------
 * Docker (dock worker) is used to create containers which is standard way of packaging any application
 * Application can be any of the below but have a standard way of packaging i.e docker image.
    * developed in any technology
@@ -136,7 +142,7 @@ docker image ls (for listof images)
    * Explore storage `df -h` & `lsblk`
 
 Accessing Application inside Docker containers:
--------------------------------------------
+-----------------------------------------------
 * The machine where we have installed docker will referred as host and the docker container will be referred as container.
 * We have access to host network & as of now containers are created in private container network, so to access applications inside containers we use port-forwording.
 * command: `docker container run -d -p <host-port>:<App-port> <image>`
@@ -179,7 +185,7 @@ Dockerfile
 
 **RUN:** The RUN instruction will execute any commands in a new layer on top of the current image and commit the results. The resulting committed image will be used for the next step in the Dockerfile.(The commands to be executed while building the image to install/configure your application)
 
-**CMD:** This command will be executed while starting the container.
+**CMD:** This command will be executed while starting the container. If we don't write CMD in dockerfile it will take CMD of base image.
 
 **EXPOSE:** This adds ports to be exposed while starting the container.
 
@@ -250,8 +256,8 @@ CMD ["java", "-jar", "/spring-petclinic-2.4.2.jar"]
 ### Docker container will be in running state as long as command in cmd is running.
 * Docker container will move to exited stated once the command in CMD has finished executing.
   
-Exercise-1:
------------
+### Exercise-1:
+
 * Create a ubuntu vm
 * install apache2 and note the ExecStart command for apache2.
     * nano /etc/systemd/system/multi-user.target.wants/apache2.service.
@@ -311,14 +317,252 @@ docker image build --build-arg HOME_DIR=/publish -t nop:1.0.0 .
 * It is not a good idea to run the container as root user(for security issues) so we have to create a user and switch to that user.
   
 **ENTRYPOINT:** Entrypoint and CMD does the same but command passed in CMD can be changed while creating the container but entrypoint can't be changed.
+* CMD can be overwrite easily where as overwriting ENTRYPOINT  requires an extra argument --entryponit while creating the container.
+* Docker will check the ENTRYPOINT and CMD. If entrypoint is present then cmd is argument for enrtypoint.
 
 **USER:** The USER instruction sets the user name (or UID) and optionally the user group (or GID) to use as the default user and group for the remainder of the current stage. The specified user is used for RUN instructions and at runtime, runs the relevant ENTRYPOINT and CMD commands.
 * [Refer Here](https://github.com/tejaswini1811/Docker/commit/50fb43dda46468017a389b388fd60b9ab51d5321) for Dockerfile using user.
 ![preview](images/docker13.png)
 * We can create docker image, by giving Dockerfile we can give other name to Dockerfile and create an image by using the command `docker image build -t <imagename> -f <dockerfilename> .`
-### Image layer
-* Docker images have read only layers when container is created using images then readyand write layer will be added.
-* 
 
+#### Entrypoint and CMD
+* Lets create two docker images
+* Image Nmae: first
+```Dockerfile
+FROM alpine
+CMD ["sleep", "1d"]
+```
+* Create a container with `docker container run first ping -c 4 google.com`
+  ![preview](images/docker26.png)
+* Image Name: second
+```Dockerfile
+FROM alpine
+ENTRYPOINT ["sleep"]
+CMD ["1d"]
+```
+* We can override the entrypoint by passing an argument while creating a docker container`docker conatiner run --entrypoint <instruction> <image name> <command>`. The command i have given is `docker container run  --entrypoint ping second -c 1 google.com`
+![preview](images/docker27.png)
+![preview](images/docker28.png)
+  
+Image layer
+-----------
+* Docker images have read only layers when container is created using images then readyand write layer will be added.
+* [Refer Here](https://directdevops.blog/2023/04/15/devops-classroomnotes-15-apr-2023/) for detailed explanation of image layers.
+* Docker image is collection of layers and some metadata
+* Docker image gets first set of layers from base image
+* Any Additional changes w.r.t ADD/COPY creates extra layers
+* Each RUN instruction which needs some storage creates layer
+* It is recommended to use Multiple commands in RUN instruction rather than multiple RUN instructions as this leads to too many layers
+* Docker has a filesystem which is aware of layers
+  * overlay2
+  
+### Container and layers
+* When a container gets created all the effective read-only image layers are mounted as disk to the container
+* Docker creates a thin read write layer for each container.
+* Any changes made by container will be stored in this layer
+* Problem: when we delete container read write layer will be deleted.
+* [Refer Here](https://directdevops.blog/2019/09/26/docker-image-creation-and-docker-image-layers/) for the article on layers
+* [Refer Here](https://directdevops.blog/2019/09/27/impact-of-image-layers-on-docker-containers-storage-drivers/) for layers and storage Drivers.
+  
+### Stateful Appplications and Stateless Applications
+* Stateful applications use local storage to store any state
+* Stateless applications use external systems (database, blobstorage etc) to store the state
+* We need not do anything special if your application is stateless in terms of writable layer, but if it stateful we need to preserve the state.
+  
+Docker Volumes
+--------------
+### Solving the Problem with Writable Layers
+* Lets create a mysql container 
+command
+```
+docker container run -d --name mysqldb -e MYSQL_ROOT_PASSWORD=rootroot -e MYSQL_DATABASE=employees -e MYSQL_USER=qtdevops -e MYSQL_PASSWORD=rootroot -P mysql:8
+```
+![preview](images/docker14.png)
+* To login into container
+ ```
+ docker container exec -it mysqldb mysql --password=rootroot
+ ```
+* To create a table
+```
+  use employees;
+  CREATE TABLE Persons (
+      PersonID int,
+      LastName varchar(255),
+      FirstName varchar(255),
+      Address varchar(255),
+      City varchar(255)
+  );
+  Insert into Persons Values (1,'test','test', 'test', 'test');
+  Select * from Persons;
+```
+![preview](images/docker15.png)
+* Now if we remove the container we loose the data
+* To fix the problem with data losses, Docker has volumes.
+* Volume can exist even after docker container is deleted.
+* We can attach volumes to other containers as well
+* For this volume to work, we need to know the folder of which data will be preserved
+* Let explore docker volume subcommand.
+* docker volume creates a storage according to the driver specified. The default driver is local i.e. the volume is created in the machine where docker is executing. 
+* Created a volume with `docker volume create <volumename>`
+![preview](images/docker16.png)
+* Now deleted the previous container and create the a container attaching volume with is given to previous container.
+![preview](images/docker17.png)
+
+**Experiment**
+* Create a mysql container
+* list all the volumes
+* inspect all the volumes
+* create volume docker volume create myvol
+* inspect myvol
+* Figure out locations of volumes in your local systems.
+![preview](images/docker18.png)
+
+**KeyPoints**
+
+* Always ensure volumes are automatically created for the stateful applications as part of Dockerfile (VOLUME instruction)
+* Volumes are of two types
+  * Explicity created (docker volume create myvol)
+  * automatically created as part of container creation
+* Ensure we have knowledge on necessary folders where the data is stored and use volumes for it.
+
+* [Refer Here](https://directdevops.blog/2023/04/15/devops-classroomnotes-15-apr-2023-2/) for class notes.
+
+### Persisting Data using Volumes
+* Lets create an explicit volume for mysqldb
+* Lets use volume type to mount the mysqldb
+* Lets mount a volume using -v [Refer Here](https://docs.docker.com/storage/volumes/#start-a-container-with-a-volume) for official docs
+* Create a mysql container.
+```
+docker container run -d --name mysqldb -v mysqldb:/var/lib/mysql -P -e MYSQL_ROOT_PASSWORD=rootroot -e MYSQL_DATABASE=employees -e MYSQL_USER=qtdevops -e MYSQL_PASSWORD=rootroot mysql
+```
+![preview](images/docker19.png)
+* now delete the container
+* Now create a new container using mount
+```
+docker container run -d --name mysqldb --mount "source=mysqldb,target=/var/lib/mysql,type=volume" -P -e MYSQL_ROOT_PASSWORD=rootroot -e MYSQL_DATABASE=employees -e MYSQL_USER=qtdevops -e MYSQL_PASSWORD=rootroot mysql
+```
+* As we can see the data is persisted and is attached to new container.
+* Lets use bindmount to mount ./hello on docker host to the container /hello
+  ![preview](images/docker21.png)
+  ![preview](images/docker20.png)
+
+### Creating volume as part of Dockerfile
+**Gameoflife:**
+```Dockerfile
+FROM tomcat:9.0.84-jre8
+LABEL Author=Tejaswini
+ARG GOL_URL=https://referenceapplicationskhaja.s3.us-west-2.amazonaws.com/gameoflife.war
+ADD ${GOL_URL} /usr/local/tomcat/webapps/gameoflife.war
+VOLUME [ "/usr/local/tomcat" ]
+EXPOSE 8080
+#CMD is not mentioned so CMD of base image will be taken
+```
+![preview](images/docker22.png)
+![preview](images/docker23.png)
+
+Docker Network
+--------------
+### Experiment
+* Create a alpine container with the following names
+```
+docker container run -d --name C1 alpine sleep 1d
+docker container run -d --name C2 alpine sleep 1d
+```
+* Now run in C1 ping C2 (docker container exec C1 ping C2)
+* Findout ip addresses of C1 container and C2 container by executing
+```
+docker container inspect C1
+docker container inspect C2
+```
+* Now login into C1 and ping C2 by using its ipaddress
+* Observation Results
+  * ping by name is not working
+  ![preview](images/docker24.png)
+  * ping by ip is working
+  ![preview](images/docker25.png)
+
+* Create an ubunutu linux vm
+* install net-tools
+```
+sudo apt update && sudo apt install net-tools -y
+ifconfig
+```
+![preview](images/docker29.png)
+*  Now install docker and check network interfaces again ifconfig
+![preview](images/docker30.png)
+* A docker0 network interface is added.
+* [Refer Here](https://directdevops.blog/2019/10/05/docker-networking-series-i/) for detailed explanation on docker network drivers.
+
+### Docker Native Network Drivers
+ 1. Host: Container uses the networking stack of the host.
+ 2. Bridge: Creates a bridge on the host that is managed by Docker.All containers on Bridge Driver can communicate among themselves. Default Driver
+ 3. Overlay: Used for multi-host networks.
+ 4. MACVLAN: uses Linux MACVLAN bridge to establish connection b/w container interfaces & parent host interfaces. MAC address can be attached to each container.
+   
+### Docker Networking Scopes
+* Local: provides connectivity within host
+* Swarm: provides connectivity across swarm cluster
+  
+### Host Network Driver
+* In host network driver all the containers are in same network namespace(sandbox)
+  ![preview](images/docker38.webp)
+
+### Bridge Network Driver
+**Default Bridge Network Driver**
+![preview](images/docker39.webp)
+
+**User-Defined Bridge Networks**
+![preview](images/docker40.webp)
+* **Bridge:**
+  * Default bridge will not have dns enabled (this is why in the above experiment C1 was not able to ping C2 by name)
+* Create a container C1 in default network `docker container run -d --name C1 alpine sleep 1d`
+![preview](images/docker31.png)
+* Default netwowrks when we install docker we get.
+![preview](images/docker32.png)
+![preview](images/docker33.png)
+* inspect default bridge network `docker network inspect bridge`
+![preview](images/docker34.png)
+* Lets create a new bridge network. After that create two contianers C2 and C3 in my_bridge network
+![preview](images/docker35.png)
+* Inspect my_bridge network.
+![preview](images/docker36.png)
+
+* Lets try ping from c2 to c3 by name. In default bridge network we can't ping containers with names but user-defined bridge networks we can ping by names as well as ip address.
+![preview](images/docker37.png)
+* Connect container C1 to my_bridge network
+```
+docker container exec C1 ip addr
+docker network connect my_bridge C1
+docker container exec C1 ip addr
+docker network disconnect bridge C1
+docker container exec C1 ip addr
+```
+![preview](images/docker41.png)
+![preview](images/docker42.png)
+
+**Exercise**
+* Lets create a mysql container in my_bridge network
+  ```
+  docker container run -d --name mysqldb -v mysqldb:/var/lib/mysql -P -e MYSQL_ROOT_PASSWORD=rootroot -e MYSQL_DATABASE=employees -e MYSQL_USER=qtdevops --network my_bridge mysql
+  ```
+* Lets run phpmyadmin
+```
+docker container run --name phpmyadmin --network my_bridge -d -e PMA_HOST=mysqldb -P phpmyadmin
+
+``` 
+![preview](images/docker43.png)
+![preview](images/docker44.png)
+![preview](images/docker45.png)
+* Above when creating phpmyadmin container we mention pma host as containere name of mysqldb and both the containers are connected because both belongs to user-defined bridge network.
+
+### Multi Stage Docker build
+* Multi staged build is used to build the code and copy necessary files into the final stage which will be your image
+* By using multi stage we can reduce the sixe of our docker image.
+* Example for multistage dockerfile [Refer here](https://github.com/tejaswini1811/Docker/blob/main/spring-petclinic/Dockerfile)
+
+### Pushing images to Registries
+1. Public Repository: Docker Hub is mostly used. 1 private repository is given free but we can use multiple by buying.
+2. Private Repository: examples areECR(Elastic Container Repository), ACR(Azure Container Repository), JFrog
+   
 
 

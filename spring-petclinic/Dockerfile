@@ -6,6 +6,6 @@ RUN mvn package
 FROM openjdk:17-alpine
 LABEL author="Tejaswini"
 WORKDIR /tmp/
-COPY --from=Build spring-petclinic/target/ /tmp/
+COPY --from=Build spring-petclinic/target/*.jar /tmp/
 EXPOSE 8080
 CMD ["java","-jar","spring-petclinic-3.0.0-SNAPSHOT.jar"]
