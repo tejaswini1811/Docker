@@ -214,7 +214,6 @@ CMD ["java", "-jar", "/spring-petclinic-2.4.2.jar"]
 ### Example-2: Adding Label to the Dockerfile
 ```Dockerfile
 FROM amazoncorretto:11
-FROM amazoncorretto:11
 LABEL author="Tejaswini"
 LABEL organization="qt"
 LABEL project="learning"
@@ -225,7 +224,6 @@ CMD ["java", "-jar", "/spring-petclinic-2.4.2.jar"]
 ```
 ### Example-3: Using ADD 
 ```Dockerfile
-FROM amazoncorretto:11
 FROM amazoncorretto:11
 LABEL author="Tejaswini"
 LABEL organization="qt"
@@ -562,7 +560,67 @@ docker container run --name phpmyadmin --network my_bridge -d -e PMA_HOST=mysqld
 
 ### Pushing images to Registries
 1. Public Repository: Docker Hub is mostly used. 1 private repository is given free but we can use multiple by buying.
-2. Private Repository: examples areECR(Elastic Container Repository), ACR(Azure Container Repository), JFrog
+  
+* Login into your Docker account.
+  ![preview](images/docker46.png)
+  ![preview](images/docker47.png)
+  ![preview](images/docker48.png)
+
+2. Private Repository: examples areECR(Elastic Container Repository), ACR(Azure Container Repository), JFrog.
+  
+  ![preview](images/docker49.png)
+  ![preview](images/docker50.png)
+
+Understanding Multi-Host Networking
+----------------------------------------
+* Multi-host networking is created as part of docker orchestration called as SWARM
+Refer Here for multi host networking.
+* According to what we have learnt so far. Communication between containers in same host is possible using bridge or macvlan etc. but communication between two containers running on two different hosts is not possible.
+  ![preview](images/docker51.webp)
+
+* Docker has a netwok driver called as overlay network
+Using vxlan, overlay networks use underlay to create a virtual network which is logical and appears as if the containers across hosts are connected to the same network.
+![preview](images/docker52.webp)
+
+* To create multi host network, we need to create docker swarm cluster.
+* Swarm cluster provides native docker container orchestration.
+* Some of the activities the cluster performs
+   * Maintains the desired state.
+   * Performs scaling
+   * chooses the master node (manager)
+   * ability to add docker hosts to the cluster 
    
+* Setting the Cluster
+* There are two kinds of nodes
+  * **Manager nodes:** 
+      * You communicate to manager node to deploy applications in the form of Service Definitions.
+      * Manager nodes dispatch unit of work called as tasks to the Worker ndoes 
+  * **Worker nodes:**
+      * They receive & execute the tasks dispatched from manager nodes.
+      * An agent runs on the worker node & reports on the tasks assigned to it
+![preview](images/docker53.png)
+![preview](images/docker54.png)
+![preview](images/docker55.png)
+![preview](images/docker56.png)
+* [Refer Here](https://directdevops.blog/2019/10/07/docker-swarm-mode/) for more details.
 
-
+A Sample Application
+--------------------
+* Python based application:
+   * Web application
+   * Database
+* What is that I did
+   * Create a bridge network
+   * Create a volume and attach it to mysql container
+   * Resolve the mysql container by its name
+ ```bash 
+  git clone https://github.com/DevProjectsForDevOps/StudentCoursesRestAPI.git
+  cd StudentCoursesRestAPI
+  docker image build -t scr:latest
+  docker network create -d bridge scr_bridge
+  docker volume create scr_db
+  docker container run -d --name mysql -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=test -e MYSQL_USER=directdevops -e MYSQL_PASSWORD=directdevops --network scr_bridge -v scr_db:/var/lib/mysql mysql:5.6
+  docker container run -d --name mypythonapp -e MYSQL_SERVER=mysql --network scr_bridge -P scr:latest
+```
+* We can do the above thing using docker compose file.
+* 
